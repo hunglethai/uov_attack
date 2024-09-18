@@ -2,7 +2,7 @@ from functions import *
 from tqdm import tqdm
 
 F = GF(2,'x')
-n = 10
+n = 6
 A = create_anti_identity_matrix(F,n//2)
 print(A)
 
@@ -25,3 +25,7 @@ else:
 # Check
 print("Check: \n")
 print(isotropic_matrix.transpose()*A*isotropic_matrix)
+
+# Search for matrix L such that isotropic_matrix.transpose() * L.transpose() * A * L * isotropic_matrix == 0
+list_L = find_L_for_condition(isotropic_matrix, A, F)
+print(len(list_L))

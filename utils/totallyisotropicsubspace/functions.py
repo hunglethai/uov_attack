@@ -56,3 +56,38 @@ def generate_matrix_from_basis(F,basis):
     
     return isotropic_matrix
 
+# Function to check if isotropic_matrix.transpose() * L.transpose() * A * L * isotropic_matrix == 0
+def check_condition(isotropic_matrix, A, L,F):
+    # Ensure L is not a zero matrix
+    if L.is_zero():
+        return False  # L is zero, reject it
+    # Proceed with the original condition check
+    n, k = isotropic_matrix.nrows(), isotropic_matrix.ncols()
+    result = isotropic_matrix.transpose() * L.transpose() * A * L * isotropic_matrix
+    return (result.is_zero())
+
+# Brute-force search for matrix L
+def find_L_for_condition(isotropic_matrix, A, F):
+    n = A.nrows()  # Dimension n
+    q = F.order()
+
+    # Generate all possible matrices of size n * n over F
+    # This will be slow for large n and q, as we're brute-forcing it
+    num_matrices = q ** (n * n)
+    print(f"Brute-forcing {num_matrices} matrices of size {n}x{n} over GF({q})...")
+    
+    valid_L_matrices = []  # List to store all valid L matrices found
+
+    # Progress bar using tqdm
+    for entries in tqdm(cartesian_product_iterator([F]*n*n), total=int(num_matrices), desc="Searching for L"):
+        # Reshape the list of entries into a matrix L of size n * n
+        L = matrix(F, n, n, entries)
+        
+        # Check if L satisfies the condition
+        if check_condition(isotropic_matrix, A, L, F):
+            valid_L_matrices.append(L)  # Add valid L to the list
+
+    # Return the list of valid L matrices
+    return valid_L_matrices
+
+
