@@ -1,31 +1,16 @@
 from functions import *
-from tqdm import tqdm
 
 F = GF(2,'x')
-n = 6
+n = 8
 A = create_anti_identity_matrix(F,n//2)
 print(A)
 
-# Brute force search isotropic subspace
-result = find_totally_isotropic_subspace(A, F, n//2)
+# Set identity matrix of size n * n
+I = matrix.identity(F,n)
 
-if result:
-    print("Found totally isotropic subspace with basis:")
-    for vec in result:
-        print(vec)
-        
-    # Generate a matrix from the found basis
-    isotropic_matrix = generate_matrix_from_basis(F,result)
-    print("Matrix generated from the basis of the isotropic subspace:")
-    print(isotropic_matrix)
-else:
-    print("No totally isotropic subspace found.")
+# Brute force search isotropic matrices size m * n
 
+list_iso_matrices = brute_force_search_isotropic_matrices(A,F,n//2)
 
-# Check
-print("Check: \n")
-print(isotropic_matrix.transpose()*A*isotropic_matrix)
-
-# Search for matrix L such that isotropic_matrix.transpose() * L.transpose() * A * L * isotropic_matrix == 0
-list_L = find_L_for_condition(isotropic_matrix, A, F)
-print(len(list_L))
+number_iso_matrices = len(list_iso_matrices)
+print(number_iso_matrices)

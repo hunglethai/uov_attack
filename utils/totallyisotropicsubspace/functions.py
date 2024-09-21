@@ -1,6 +1,7 @@
 # Import all necessary Sage functionality
 from sage.all import *
 from tqdm import tqdm
+import itertools
 
 # Define a function anti identity matrix that has rank n = 2k
 def create_anti_identity_matrix(F: FiniteField,k: int) -> Matrix:
@@ -26,7 +27,7 @@ def create_anti_identity_matrix(F: FiniteField,k: int) -> Matrix:
                 [0 0 | 1 0]
     """
     # Define the 2x2 block
-    A = matrix(Fq,[[0, 1], [1, 0]])
+    A = matrix(F,[[0, 1], [1, 0]])
 
     # Create a list of n blocks, each of size 2x2
     blocks = [A for i in range(k)]
@@ -37,7 +38,7 @@ def create_anti_identity_matrix(F: FiniteField,k: int) -> Matrix:
     return anti_identity
 
 # Function to check if a subspace is totally isotropic
-def is_totally_isotropic(subspace_basis: list[Vector], A: Matrix) -> bool:
+def is_totally_isotropic(subspace_basis: list['Vector'], A: Matrix) -> bool:
     """
     Check if a basis of a vector subspace is totally isotropic
 
@@ -58,7 +59,7 @@ def is_totally_isotropic(subspace_basis: list[Vector], A: Matrix) -> bool:
     return True
 
 # Brute-force search for totally isotropic subspace
-def find_totally_isotropic_subspace(A: Matrix, F: FiniteField, dim_subspace: int) -> list[Vector]:
+def find_totally_isotropic_subspace(A: Matrix, F: FiniteField, dim_subspace: int) -> list['Vector']:
     """
     Finds a totally isotropic subspace of a given dimension for a bilinear form matrix A over a finite field F.
     
@@ -102,7 +103,7 @@ def find_totally_isotropic_subspace(A: Matrix, F: FiniteField, dim_subspace: int
     return None  # No totally isotropic subspace found
 
 # Function to generate matrix from basis vectors using a loop
-def generate_matrix_from_basis(F: FiniteField,basis: list[Vector]) -> Matrix:
+def generate_matrix_from_basis(F: FiniteField,basis: list['Vector']) -> Matrix:
     """
     Generate a matrix from a list of vectors in a basis
 
@@ -182,4 +183,40 @@ def find_L_for_condition(isotropic_matrix: Matrix, A: Matrix, F: FiniteField) ->
     # Return the list of valid L matrices
     return valid_L_matrices
 
+# Brute-force search for matrices L such that L.transpose() * A * L == 0
+def brute_force_search_isotropic_matrices(A: Matrix, F: FiniteField, m: int) -> Matrix:
+    """
+    Brute-force search for a matrix L of size n x m such that L^T * A * L == 0.
+
+    Parameters:
+    -----------
+    A : Matrix
+        A square matrix of size n x n representing the bilinear form or quadratic form.
+    F : FiniteField
+        The finite field over which the entries of matrix A, L are defined.
+    m : int
+        The number of columns of matrix L.
+
+    Returns:
+    --------
+    Matrix or None:
+        Returns a matrix L of size n x m that satisfies L^T * A * L == 0,
+        or None if no such matrix is found.
+    """
+    n = A.nrows()
+    valid_matrices = []
+    
+    # Total combinations
+    total_combinations = len(F) ** (n * m)
+
+    # Iterate over all possible values for matrix L in the finite field
+    for values in tqdm(itertools.product(F, repeat=n * m), total=total_combinations, desc="Searching for valid matrices"):
+        # Create a matrix L from the current combination of values
+        L = matrix(F, n, m, values)
+        
+        # Check if L^T * A * L == 0
+        if (L.transpose() * A * L).is_zero():
+            valid_matrices.append(L)  # Add the valid matrix to the list
+
+    return valid_matrices  # Return the list of valid matrices
 
