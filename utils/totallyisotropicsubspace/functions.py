@@ -3,7 +3,28 @@ from sage.all import *
 from tqdm import tqdm
 
 # Define a function anti identity matrix that has rank n = 2k
-def create_anti_identity_matrix(Fq,k):
+def create_anti_identity_matrix(F: FiniteField,k: int) -> Matrix:
+    """
+    Generate a matrix like this
+    
+    [0 1 | 0 0]
+    [1 0 | 0 0]
+    -----------
+    [0 0 | 0 1]
+    [0 0 | 1 0]
+
+    Args:
+        F (FiniteField): Finite Field
+        k (int): 1/2 dimension of the generated matrix 
+
+    Returns:
+        Matrix:     
+                [0 1 | 0 0]
+                [1 0 | 0 0]
+                -----------
+                [0 0 | 0 1]
+                [0 0 | 1 0]
+    """
     # Define the 2x2 block
     A = matrix(Fq,[[0, 1], [1, 0]])
 
@@ -16,7 +37,20 @@ def create_anti_identity_matrix(Fq,k):
     return anti_identity
 
 # Function to check if a subspace is totally isotropic
-def is_totally_isotropic(subspace_basis, A):
+def is_totally_isotropic(subspace_basis: list[Vector], A: Matrix) -> bool:
+    """
+    Check if a basis of a vector subspace is totally isotropic
+
+    Parameters:
+    -----------
+    subspace_basis: a list of vectors
+    
+    A: Matrix
+    -----------
+
+    Returns:
+        bool: True/False
+    """
     for v in subspace_basis:
         for w in subspace_basis:
             if (v * A * w) != 0:
@@ -24,7 +58,32 @@ def is_totally_isotropic(subspace_basis, A):
     return True
 
 # Brute-force search for totally isotropic subspace
-def find_totally_isotropic_subspace(A, F, dim_subspace):
+def find_totally_isotropic_subspace(A: Matrix, F: FiniteField, dim_subspace: int) -> list[Vector]:
+    """
+    Finds a totally isotropic subspace of a given dimension for a bilinear form matrix A over a finite field F.
+    
+    Parameters:
+    -----------
+    A : sage.matrix.matrix_space.Matrix
+        A square Sage matrix representing the bilinear or quadratic form. It should be symmetric and have dimensions n x n.
+    
+    F : sage.rings.finite_rings.finite_field.FiniteField
+        The finite field over which the matrix A is defined.
+    
+    dim_subspace : int
+        The dimension of the desired isotropic subspace. This should be less than or equal to the dimension of the matrix A (i.e., dim_subspace <= n).
+    
+    Returns:
+    --------
+    list of sage.modules.free_module_element.Vector:
+        A list of vectors that form the basis for the totally isotropic subspace of the given dimension.
+    
+    Raises:
+    -------
+    ValueError:
+        If the desired dimension is larger than the dimension of the matrix A or if other invalid conditions are met.
+    """
+    
     n = A.nrows()  # Dimension of the vector space
     
     # Generate all possible subspaces of given dimension
@@ -43,21 +102,43 @@ def find_totally_isotropic_subspace(A, F, dim_subspace):
     return None  # No totally isotropic subspace found
 
 # Function to generate matrix from basis vectors using a loop
-def generate_matrix_from_basis(F,basis):
+def generate_matrix_from_basis(F: FiniteField,basis: list[Vector]) -> Matrix:
+    """
+    Generate a matrix from a list of vectors in a basis
+
+    Args:
+        F (_type_): Finite field
+        basis (_type_): list of vectors
+
+    Returns:
+        representation_matrix: A matrix that represents the basis
+    """
     # Create an empty matrix with the same number of rows as the vectors and as many columns as there are basis vectors
     rows = len(basis[0])  # The length of each vector gives the number of rows
     cols = len(basis)     # The number of basis vectors gives the number of columns
-    isotropic_matrix = matrix(F, rows, cols)  # Initialize the matrix over F
+    representation_matrix = matrix(F, rows, cols)  # Initialize the matrix over F
     
     # Populate the matrix by adding each vector as a column
     for j, vec in enumerate(basis):
         for i in range(rows):
-            isotropic_matrix[i, j] = vec[i]  # Place each element in the appropriate position
+            representation_matrix[i, j] = vec[i]  # Place each element in the appropriate position
     
-    return isotropic_matrix
+    return representation_matrix
 
 # Function to check if isotropic_matrix.transpose() * L.transpose() * A * L * isotropic_matrix == 0
-def check_condition(isotropic_matrix, A, L,F):
+def check_condition(isotropic_matrix: Matrix, A: Matrix, L: Matrix,F: FiniteField):
+    """
+    Check if isotropic_matrix.transpose() * L.transpose() * A * L * isotropic_matrix == 0
+
+    Args:
+        isotropic_matrix (Matrix): Target matrix to check
+        A (Matrix): bilinear form or quadratic form representation matrix
+        L (Matrix): A change of basis matrix if any
+        F (FiniteField): Finite field
+
+    Returns:
+        True/False: True if == 0
+    """
     # Ensure L is not a zero matrix
     if L.is_zero():
         return False  # L is zero, reject it
@@ -66,8 +147,19 @@ def check_condition(isotropic_matrix, A, L,F):
     result = isotropic_matrix.transpose() * L.transpose() * A * L * isotropic_matrix
     return (result.is_zero())
 
-# Brute-force search for matrix L
-def find_L_for_condition(isotropic_matrix, A, F):
+# Brute-force search for matrix L such that isotropic_matrix.transpose() * L.transpose() * A * L * isotropic_matrix == 0
+def find_L_for_condition(isotropic_matrix: Matrix, A: Matrix, F: FiniteField) -> list[Matrix]:
+    """
+    Brute-force search for matrix L such that isotropic_matrix.transpose() * L.transpose() * A * L * isotropic_matrix == 0
+
+    Args:
+        isotropic_matrix (Matrix): A matrix
+        A (Matrix): bilinear form or quadratic form representation matrix
+        F (FiniteField): Finite field
+
+    Returns:
+        list[Matrix]: List of L
+    """
     n = A.nrows()  # Dimension n
     q = F.order()
 
