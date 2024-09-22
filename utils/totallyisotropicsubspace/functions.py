@@ -270,7 +270,7 @@ def diagonalize_2x2_alternating_matrix(A: Matrix, F: FiniteField) -> Matrix:
         return None    
     
     if A.is_zero():
-        return A
+        return matrix.identity(F,A.nrows())
     
     # Number of rows and columns
     n_rows = A.nrows()
@@ -301,7 +301,7 @@ def diagonalize_2x2_alternating_matrix(A: Matrix, F: FiniteField) -> Matrix:
         return L
     
     if A[0,1] == 0:
-        print("Switching ... \n")
+        print("\n Switching ... \n")
         # Search for any A[0,i] != 0, it must exist at least one since A is a full-rank matrix
         for i in range(0,n_cols):
             if A[0,i] != 0:
@@ -372,23 +372,21 @@ def diagonalize_full_alternating_matrix(A: Matrix, F: FiniteField) -> Matrix:
             
             # Get new A
             A = L*A*L.transpose()
-            # print("\n",A,"\n")
+            
             # Extract a submatrix of size (n_rows - 1) x (n_cols - 1)
             A = A.submatrix(1, 1, A.nrows()-1, A.ncols()-1)
-            # print("\n",A,"\n")
+            
             # Append to the list
             list_i_A_L.append((i,A,L))
             
         if i != 0:
             A = list_i_A_L[i-1][1]
-            print(" new A is  \n",A,"\n")
 
             # Get the diagonalizing matrix of the first block as bottomright corner
             L = diagonalize_2x2_alternating_matrix(A,F)
             
             # Get new A
             A = L*A*L.transpose()
-            # print("\n After transform \n",A,"\n")
             
             # Get the identity matrix of size i * i as topleft corner
             I = matrix.identity(F,i)
@@ -409,5 +407,18 @@ def diagonalize_full_alternating_matrix(A: Matrix, F: FiniteField) -> Matrix:
     for _, _, L in list_i_A_L[::-1]:
         result_L *= L  # Multiply result by each matrix L
 
-    # The result now contains the product of all matrices in list_L
-    return result_L
+    # The result_L now contains the product of all matrices in list_L such that result_L*A*result_L.transpose() is almost anti identity
+    
+    # Final permutation matrix to get anti identity matrix
+    list_P = []
+    
+    for i in range(2, n_rows, 2):
+        P = identity_matrix(n_rows)
+        P[i, i-2] = 1   # Add a 1 in the row two steps above
+        list_P.append((i,P))
+    
+    result_P = matrix.identity(F, n_rows) 
+    for _, P in list_P[::-1]:
+        result_P *= P 
+
+    return result_P*result_L

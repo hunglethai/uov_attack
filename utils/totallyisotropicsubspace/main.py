@@ -1,7 +1,7 @@
 from functions import *
 
 F = GF(4,'x')
-n = 12
+n = 6
 # A = create_anti_identity_matrix(F,n//2)
 A = random_matrix(F,n,n)
 A = A + A.transpose()
@@ -19,6 +19,8 @@ print("\n A = \n", A, "\n of rank ",A.rank())
 
 
 L = diagonalize_full_alternating_matrix(A,F)
-print("L = \n ", L, " of rank ",L.rank())
+print("L = \n ")
+print(L, " of rank ",L.rank())
 if L != None:
-    print("Check \n", L*A*L.transpose())
+    print("Check \n") 
+    print(L*A*L.transpose())
