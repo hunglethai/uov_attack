@@ -59,7 +59,7 @@ def is_totally_isotropic(subspace_basis: list['Vector'], A: Matrix) -> bool:
     return True
 
 # Brute-force search for totally isotropic subspace
-def find_totally_isotropic_subspace(A: Matrix, F: FiniteField, dim_subspace: int) -> list['Vector']:
+def find_totally_isotropic_subspace(F: FiniteField,A: Matrix,  dim_subspace: int) -> list['Vector']:
     """
     Finds a totally isotropic subspace of a given dimension for a bilinear form matrix A over a finite field F.
     
@@ -127,7 +127,7 @@ def generate_matrix_from_basis(F: FiniteField,basis: list['Vector']) -> Matrix:
     return representation_matrix
 
 # Function to check if isotropic_matrix.transpose() * L.transpose() * A * L * isotropic_matrix == 0
-def check_condition(isotropic_matrix: Matrix, A: Matrix, L: Matrix,F: FiniteField):
+def check_condition(F: FiniteField, isotropic_matrix: Matrix, A: Matrix, L: Matrix) -> bool:
     """
     Check if isotropic_matrix.transpose() * L.transpose() * A * L * isotropic_matrix == 0
 
@@ -149,7 +149,7 @@ def check_condition(isotropic_matrix: Matrix, A: Matrix, L: Matrix,F: FiniteFiel
     return (result.is_zero())
 
 # Brute-force search for matrix L such that isotropic_matrix.transpose() * L.transpose() * A * L * isotropic_matrix == 0
-def find_L_for_condition(isotropic_matrix: Matrix, A: Matrix, F: FiniteField) -> list[Matrix]:
+def find_L_for_condition(F: FiniteField, isotropic_matrix: Matrix, A: Matrix) -> list[Matrix]:
     """
     Brute-force search for matrix L such that isotropic_matrix.transpose() * L.transpose() * A * L * isotropic_matrix == 0
 
@@ -184,7 +184,7 @@ def find_L_for_condition(isotropic_matrix: Matrix, A: Matrix, F: FiniteField) ->
     return valid_L_matrices
 
 # Brute-force search for matrices L such that L.transpose() * A * L == 0
-def brute_force_search_isotropic_matrices(A: Matrix, F: FiniteField, m: int) -> Matrix:
+def brute_force_search_isotropic_matrices(F: FiniteField,A: Matrix,  m: int) -> list:
     """
     Brute-force search for a matrix L of size n x m such that L^T * A * L == 0.
 
@@ -221,7 +221,7 @@ def brute_force_search_isotropic_matrices(A: Matrix, F: FiniteField, m: int) -> 
     return valid_matrices  # Return the list of valid matrices
 
 # Check if a matrix A is an alternating matrix
-def check_alternating_matrix(A: Matrix, F: FiniteField) -> bool:
+def check_alternating_matrix(F: FiniteField, A: Matrix) -> bool:
     """
     Check if a matrix is an alternating matrix
 
@@ -253,7 +253,7 @@ def check_alternating_matrix(A: Matrix, F: FiniteField) -> bool:
     return True
 
 # Diagonalize top-left 2x2 block
-def diagonalize_2x2_alternating_matrix(A: Matrix, F: FiniteField) -> Matrix:
+def diagonalize_2x2_alternating_matrix(F: FiniteField, A: Matrix) -> Matrix:
     """
     Diagonalize the top-left 2x2 block
 
@@ -265,7 +265,7 @@ def diagonalize_2x2_alternating_matrix(A: Matrix, F: FiniteField) -> Matrix:
         Matrix: Diagonalized-top-left-block matrix
     """
     # Check if the input matrix is a full-rank alternating matrix
-    if check_alternating_matrix(A,F) == False:
+    if check_alternating_matrix(F,A) == False:
         print("A is not a full-rank alternating matrix")
         return None    
     
@@ -340,7 +340,7 @@ def diagonalize_2x2_alternating_matrix(A: Matrix, F: FiniteField) -> Matrix:
         return L*I # Return switched L
     
 # Diagonalize an alternating matrix
-def diagonalize_full_alternating_matrix(A: Matrix, F: FiniteField) -> Matrix:
+def diagonalize_full_alternating_matrix(F: FiniteField, A: Matrix) -> Matrix:
     """
     Return a matrix L such that L is invertible and L.transpose()*A*L = 
     
@@ -368,7 +368,7 @@ def diagonalize_full_alternating_matrix(A: Matrix, F: FiniteField) -> Matrix:
     for i in tqdm(range(n_rows),ncols = 100,desc="Diagonalizing block by block ..."):
         if i == 0:
             # Get the diagonalizing matrix of the first block
-            L = diagonalize_2x2_alternating_matrix(A,F)
+            L = diagonalize_2x2_alternating_matrix(F,A)
             
             # Get new A
             A = L*A*L.transpose()
@@ -383,7 +383,7 @@ def diagonalize_full_alternating_matrix(A: Matrix, F: FiniteField) -> Matrix:
             A = list_i_A_L[i-1][1]
 
             # Get the diagonalizing matrix of the first block as bottomright corner
-            L = diagonalize_2x2_alternating_matrix(A,F)
+            L = diagonalize_2x2_alternating_matrix(F,A)
             
             # Get new A
             A = L*A*L.transpose()

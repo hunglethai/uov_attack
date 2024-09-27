@@ -137,7 +137,35 @@ def generate_list_M(list_P):
         list_M.append(M)
     
     return list_M
-        
+
+# Check if a subspace A (having basis X) is invariant under the linear transformation T
+def is_invariant_subspace(F, X, T):
+    """
+    Check if the subspace A spanned by X is invariant under the linear transformation T.
+    
+    Args:
+        F: The finite field over which the matrices are defined.
+        X: A matrix of size m x n representing the basis of the subspace A (with m basis vectors).
+        T: A matrix of size n x n representing the linear transformation.
+
+    Returns:
+        True if the subspace A is invariant under T, False otherwise.
+    """
+    # Create the subspace A spanned by the rows of X
+    A = span(X.rows())
+
+    # Iterate over each basis vector in X
+    for v in X.rows():
+        # Apply the transformation T to the vector v
+        T_v = v*T
+
+        # Check if the transformed vector T_v lies in the span of the basis of A
+        if not T_v in A:
+            return False
+
+    # If all transformed vectors lie in A, the subspace is invariant under T
+    return True
+
         
     
     

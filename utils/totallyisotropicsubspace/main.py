@@ -18,7 +18,7 @@ print("\n A = \n", A, "\n of rank ",A.rank())
 # print(number_iso_matrices)
 
 
-L = diagonalize_full_alternating_matrix(A,F)
+L = diagonalize_full_alternating_matrix(F,A)
 print("L = \n ")
 print(L, " of rank ",L.rank())
 if L != None:
