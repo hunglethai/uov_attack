@@ -166,6 +166,39 @@ def is_invariant_subspace(F, X, T):
     # If all transformed vectors lie in A, the subspace is invariant under T
     return True
 
+# Create a function that checks if a subspace L vanishes in a list of matrices M[i].
+def check_uov_vanishing(F: FiniteField, L , M_list: list) -> bool:
+    """
+    Check if for all row vectors x, y in subspace L and for all matrices M in M_list,
+    we have x * M * y^T = 0.
+    
+    Args:
+        F: A finite field.
+        L: A subspace of vectors over F (as a MatrixSpace or a list of row vectors).
+        M_list: A list of matrices over F.
+
+    Returns:
+        True if for all x, y in L, x * M * y^T = 0 for each M in M_list, False otherwise.
+    """
+    # Get the basis matrix of L 
+    basis_matrix = L.basis_matrix()
+
+    # Iterate over all pairs of row vectors (x, y) from the basis matrix
+    for M in tqdm(M_list, ncols = 100, desc = "Check if UOV public keys vanish on Oil subpace ... "):
+        # Check that for all row vectors x, y in the row space, x * M * y^T = 0
+        for i in range(basis_matrix.nrows()):
+            for j in range(basis_matrix.nrows()):
+                x = basis_matrix.row(i)  # row vector x
+                y = basis_matrix.row(j)  # row vector y
+                
+                # Calculate the result of x * M * y^T
+                result = x * M * y.column()  # y.column() converts y to a column vector
+                
+                # Ensure the result is treated as a scalar and compare with 0
+                if result != 0:
+                    return False
+    return True
+
         
     
     

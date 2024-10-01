@@ -33,9 +33,9 @@ def regenerate_until_full_rank(F, m, n, O):
             return list_M
 
 # Parameters
-m = 4
-n = 12
-F = GF(4, 'x')
+m = 20 # i.e o
+n = 50 # i.e. v
+F = GF(16, 'x')
 
 # Generate Oil subspace matrices Vertical O_I = [O] O_I^t * M * O_I = 0
 #                                                [I]
@@ -47,7 +47,7 @@ M = regenerate_until_full_rank(F, m, n, O)
 # Compute symplectic basis
 from sage.matrix.symplectic_basis import symplectic_basis_over_field
 L = []
-for i in range(0,m):
+for i in tqdm(range(0,m), ncols = 100, desc = "Compute symplectic basis ... "):
     L.append(symplectic_basis_over_field(M[i])[1])
 
 # Get the standard m-dimensional isotropic subspace basis of M[i] 
@@ -68,7 +68,7 @@ L_0_pseudo_inv = L_submatrix[0].pseudoinverse()
 T = (L_submatrix[1] * P) * L_0_pseudo_inv
 
 # Display the result
-print("T = \n",T, "\nCheck T*L[0] == L[1]*P :", T*L_submatrix[0] == L_submatrix[1]*P," rank T is full ? ",T.rank()==m)
+print("\nCheck T*L[0] == L[1]*P :", T*L_submatrix[0] == L_submatrix[1]*P," rank T is full ? ",T.rank()==m)
 
 # Pick random full rank matrix A and compute B such that T = A.inverse() * B
 while True:
@@ -95,7 +95,7 @@ print("Check if it yields the same L ",L1 == L2)
 row_space_L1 = L1.row_space()
 
 # Perform the check for all pairs of x, y in the row space of L1
-def check_condition(M0,M1, row_space):
+def check_condition_2(M0,M1, row_space):
     basis = row_space.basis()
     for x in basis:
         for y in basis:
@@ -107,7 +107,7 @@ def check_condition(M0,M1, row_space):
     return False  # If all results are zero, return True
 
 # Check the condition
-is_valid = check_condition(M[0], M[1],row_space_L1)
+is_valid = check_condition_2(M[0], M[1],row_space_L1)
 
 # Output the result
 if is_valid:
@@ -115,15 +115,57 @@ if is_valid:
 else:
     print("The condition x*M[0]*y = x*M[1]*y = 0 DOES NOT hold for all x, y in the span of the rows of L1.")
 
-print(L1, "\n", " of rank ", L1.rank())
+print("L1 is of rank ", L1.rank())
 
 # Check
-print(O_I.transpose())
+# print(O_I.transpose())
 # Get the row space of O_I.transpose()
 row_space_O_I = O_I.transpose().row_space()
-is_valid = check_condition(M[0], M[1],row_space_O_I)
+is_valid = check_condition_2(M[0], M[1],row_space_O_I)
 # Output the result
 if is_valid:
     print("The condition x*M[0]*y = x*M[1]*y = 0 DOES hold for all x, y in the span of the rows of O_I.")
 else:
     print("The condition x*M[0]*y = x*M[1]*y = 0 DOES NOT hold for all x, y in the span of the rows of O_I.")
+
+# Overal check if we found an oil space
+# Perform the check for all pairs of x, y 
+def check_condition_1(M0, row_space):
+    basis = row_space.basis()
+    for x in basis:
+        for y in basis:
+            # Compute x * M0 * y^T
+            result_1 = x * M0 * y.column()
+            if result_1 == 0:
+                return True  # If any result is not zero, return False
+    return False  # If all results are zero, return True
+
+all_conditions_hold = True
+
+# Iterate over all matrices M[i] and check the condition
+for i in tqdm(range(m), ncols = 100, desc = "Checking oil space found or not ... "):
+    M_i = M[i]  # Access the i-th matrix M[i]
+    
+    # Assume L1 is a matrix whose row space we are considering
+    row_space_L1 = L1.row_space()
+
+    # Check the condition for the current M_i
+    is_valid = check_condition_1(M_i, row_space_L1)
+
+    # Output the result for each M[i]
+    if not is_valid:
+        all_conditions_hold = False
+    
+# Final summary after checking all M[i]
+Oil_subspace = row_space_L1
+if all_conditions_hold:
+    print("The condition x*M[i]*y = 0 holds for all M[i].")
+    # Print the basis and dimension of the subspace
+    # print("Oil subspace L found with basis:", Oil_subspace.basis())
+    print("Dimension of the oil subspace L found:", print(Oil_subspace))
+else:
+    print("The condition x*M[i]*y = 0 does not hold for at least one M[i].")
+
+# Check UOV vanish
+# print(Oil_subspace)
+print(check_uov_vanishing(F,Oil_subspace,[M[0],M[1]]))
