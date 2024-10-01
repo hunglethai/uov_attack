@@ -301,7 +301,7 @@ def diagonalize_2x2_alternating_matrix(F: FiniteField, A: Matrix) -> Matrix:
         return L
     
     if A[0,1] == 0:
-        print("\n Switching ... \n")
+        # print("\n Switching ... \n")
         # Search for any A[0,i] != 0, it must exist at least one since A is a full-rank matrix
         for i in range(0,n_cols):
             if A[0,i] != 0:
@@ -342,7 +342,7 @@ def diagonalize_2x2_alternating_matrix(F: FiniteField, A: Matrix) -> Matrix:
 # Diagonalize an alternating matrix
 def diagonalize_full_alternating_matrix(F: FiniteField, A: Matrix) -> Matrix:
     """
-    Return a matrix L such that L is invertible and L.transpose()*A*L = 
+    Return a matrix L such that L is invertible and L*A*L.transpose() = 
     
     [0 1 0 0]
     [1 0 0 0]
@@ -365,7 +365,7 @@ def diagonalize_full_alternating_matrix(F: FiniteField, A: Matrix) -> Matrix:
     # Diagonalizing block by block
     list_i_A_L = []
     
-    for i in tqdm(range(n_rows),ncols = 100,desc="Diagonalizing block by block ..."):
+    for i in range(n_rows):
         if i == 0:
             # Get the diagonalizing matrix of the first block
             L = diagonalize_2x2_alternating_matrix(F,A)

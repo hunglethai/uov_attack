@@ -99,7 +99,7 @@ def generate_public_matrices(F: FiniteField, m: int, n: int, O: Matrix) -> list:
     """
     list_P = []
     
-    for i in tqdm(range(m), ncols =  100, desc = "Generating public keys ... "):
+    for i in range(m):
         P_1 = random_upper_triangular_matrix(F,n-m,n-m)
         P_2 = random_matrix(F,n-m,m)
         P_3 = upper(F,-O.transpose()*P_1*O - O.transpose()*P_2)
