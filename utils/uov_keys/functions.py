@@ -1,5 +1,6 @@
 from sage.all import *
 from tqdm import tqdm
+from itertools import combinations
 
 # Generate a random full rank matrix
 def random_full_rank_matrix(F: FiniteField, m: int, n: int):
