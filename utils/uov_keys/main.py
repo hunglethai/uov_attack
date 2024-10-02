@@ -33,9 +33,9 @@ def regenerate_until_full_rank(F, m, n, O):
             return list_M
 
 # Parameters
-m = 20 # i.e o
-n = 50 # i.e. v
-F = GF(16, 'x')
+m = 4  # i.e o
+n = 10 # i.e. v
+F = GF(4, 'x')
 
 # Generate Oil subspace matrices Vertical O_I = [O] O_I^t * M * O_I = 0
 #                                                [I]
@@ -50,25 +50,78 @@ L = []
 for i in tqdm(range(0,m), ncols = 100, desc = "Compute symplectic basis ... "):
     L.append(symplectic_basis_over_field(M[i])[1])
 
-# Get the standard m-dimensional isotropic subspace basis of M[i] 
-L_submatrix = [L[i][0:m] for i in range(m)]
-print("Check L_submatrix[0]*M[0]*L_submatrix[0]^t = 0:", (L_submatrix[0]*M[0]*L_submatrix[0].transpose()).is_zero())
+# Get a full-rank m-dimensional isotropic subspace basis of M[i] 
+# Iterate over the starting row index to create submatrices of size m x m
+L_submatrix = []
+for j in range(m):
+    submatrix_list = []
+    for i in range(n - m + 1):
+        # Extract submatrix with columns from i to i+m
+        submatrix = L[j][i:i+m]
+        # Check if the submatrix is full rank
+        if submatrix.rank() == m:
+            submatrix_list.append(submatrix)
+    L_submatrix.append(submatrix_list)
+
+# Check if they are indeed isotropic
+all_check_pass = True
+for i in range(m):
+    for j in range(len(L_submatrix[i])):
+        if L_submatrix[i][j]*M[i]*L_submatrix[i][j].transpose() != Matrix(F,m,m) or L_submatrix[i][j].rank() != m:
+            all_check_pass = False
+print("Check L_submatrix[i][j]*M[i]*L_submatrix[i][j]^t = 0: ", all_check_pass)
 
 # Compute P such that P*M[0]*P^t = M[1]
 Q = diagonalize_full_alternating_matrix(F,M[0]) # Q * M[0] * Q^t = anti-id
 R = diagonalize_full_alternating_matrix(F,M[1]) # R * M[1] * R^t = anti-id
 P = R.inverse()*Q
 print("Check: P*M[0]*P^t == M[1] ", P*M[0]*P.transpose() == M[1])
+print(P)
 
 # Compute T (m*m) such that T*L_0 = L_1*P with L_i of size m *n and P size n*n
-# Compute the pseudoinverse of L0
-L_0_pseudo_inv = L_submatrix[0].pseudoinverse()
+# Loop over all possible pairs (i, j) where i < j
+for i in range(len(L_submatrix[0]) - 1):
+    for j in range(i + 1, len(L_submatrix[0])):  # Ensure j > i
+        try:
+            # Get the i-th and j-th submatrices from L_submatrix[0]
+            L0_i = L_submatrix[0][i]
+            L0_j = L_submatrix[0][j]
+            
+            # Compute the pseudoinverse of L0_i
+            L0_i_pseudo_inv = L0_i.pseudoinverse()
 
-# Compute T
-T = (L_submatrix[1] * P) * L_0_pseudo_inv
+            # Compute T using L0_j and the pseudoinverse of L0_i
+            T = (L0_j * P) * L0_i_pseudo_inv
 
-# Display the result
-print("\nCheck T*L[0] == L[1]*P :", T*L_submatrix[0] == L_submatrix[1]*P," rank T is full ? ",T.rank()==m)
+            # Check if the transformation T satisfies the condition
+            if T * L0_i != L0_j * P:
+                # If the condition does not hold, continue to the next (i, j)
+                continue
+            
+        except Exception as e:
+            # If any error occurs (e.g., singular matrix), skip to the next pair (i, j)
+            print(f"Error occurred at pair (i={i}, j={j}): {e}. Skipping to the next pair.")
+            continue  # Go to the next (i, j) pair
+
+        # If the condition holds, output the result
+        print(f"\nCheck T*L[0][{i}] == L[0][{j}]*P: True, rank T is full? {T.rank() == m}")
+        
+        # Store the submatrices L_0_0 and L_0_1 as per the condition
+        L_0_0 = L0_i
+        L_0_1 = L0_j
+
+        # Output the results and the matrices
+        print("Condition holds! Storing L_0_0 and L_0_1:")
+        print(f"L_0_0 (from index {i}):\n{L_0_0}")
+        print(f"L_0_1 (from index {j}):\n{L_0_1}")
+
+        # Break the inner loop (j loop) since we found a valid pair
+        break
+    else:
+        # If no valid (i, j) pair found in this iteration, continue with the next i
+        continue
+    # Break the outer loop (i loop) as well since we have found a solution
+    break
 
 # Pick random full rank matrix A and compute B such that T = A.inverse() * B
 while True:
@@ -82,10 +135,10 @@ B = A*T
 
 # Compute L = B*L_0 and L = A*L_1*P
 # Compute L using the first formula: L = B * L_0
-L1 = B * L_submatrix[0]
+L1 = B * L_0_0
 
 # Compute L using the second formula: L = A * L_1 * P
-L2 = A * L_submatrix[1] * P
+L2 = A * L_0_1
 
 # Display results
 print("Check if it yields the same L ",L1 == L2)
