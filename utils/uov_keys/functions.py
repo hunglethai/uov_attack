@@ -200,6 +200,27 @@ def check_uov_vanishing(F: FiniteField, L , M_list: list) -> bool:
                     return False
     return True
 
+# Visualize matrices over finite fields by creating a plot where non-zero elements are represented by black dots and zero elements by white dots
+def color_matrix(matrix: Matrix):
+    """
+    Function to print a large matrix in a compact way, using:
+    - Filled squares (■) for non-zero elements.
+    - Empty squares (□) for zero elements.
+    
+    Args:
+    matrix (Matrix): A matrix over a finite field.
+
+    Prints:
+    A compact grid-based representation of the matrix.
+    """
+    for i in range(matrix.nrows()):
+        row_str = ""
+        for j in range(matrix.ncols()):
+            if matrix[i, j] == 0:
+                row_str += "□ "  # Empty square for zero
+            else:
+                row_str += "■ "  # Filled square for non-zero
+        print(row_str.strip())  # Print each row of squares
         
     
     

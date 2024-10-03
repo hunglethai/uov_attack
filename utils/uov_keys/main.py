@@ -33,10 +33,10 @@ def regenerate_until_full_rank(F, m, n, O):
             return list_M
 
 # Parameters
-m = 4  # i.e oil
-n = 10 # i.e. vinegar
+m = 32  # i.e oil
+n = 80 # i.e. vinegar + oil
 o = n//2
-F = GF(4, 'x')
+F = GF(16, 'x')
 
 # Generate Oil subspace matrices Vertical O_I = [O] O_I^t * M * O_I = 0
 #                                                [I]
@@ -51,6 +51,10 @@ L = []
 for i in tqdm(range(0,m), ncols = 100, desc = "Compute symplectic basis ... "):
     L.append(symplectic_basis_over_field(M[i])[1])
 
+for i in range(m):
+    color_matrix(L[i])
+    print("\n")
+"""
 # Get a full-rank n/2-dimensional isotropic subspace basis of M[i] 
 # This will store all submatrices of size o x n that meet the criteria
 L_submatrix = []
@@ -279,3 +283,4 @@ else:
 # Check UOV vanish
 # print(Oil_subspace)
 print(check_uov_vanishing(F,Oil_subspace,[M[0],M[1]]))
+"""
