@@ -33,13 +33,12 @@ def regenerate_until_full_rank(F, m, n, O):
             return list_M
 
 # Parameters
-m = 32  # i.e oil
-n = 80 # i.e. vinegar + oil
-o = n//2
-F = GF(16, 'x')
+m = 4  # i.e oil
+n = 12 # i.e. vinegar + oil
+F = GF(4, 'x')
 
-# Generate Oil subspace matrices Vertical O_I = [O] O_I^t * M * O_I = 0
-#                                                [I]
+# Generate Oil subspace matrices Vertical O_I = [O] i.e. O_I^t * M * O_I = 0
+#                                               [I]
 O, O_I = generate_oil_subspace_matrix(F, m, n)
 
 # Generate and check for full-rank matrices
@@ -51,138 +50,18 @@ L = []
 for i in tqdm(range(0,m), ncols = 100, desc = "Compute symplectic basis ... "):
     L.append(symplectic_basis_over_field(M[i])[1])
 
-for i in range(m):
-    color_matrix(L[i])
-    print("\n")
-"""
-# Get a full-rank n/2-dimensional isotropic subspace basis of M[i] 
-# This will store all submatrices of size o x n that meet the criteria
-L_submatrix = []
-# Iterate over all possible k (number of rows to pick from the first set)
-for l in tqdm(range(m), ncols = 100, desc = "Computing Lagrangians ... "):
-    L_list = []
-    for k in range(o + 1):
-        # Step 2: Choose k rows from the first half [0, 1, ..., o-1]
-        first_half_rows = range(o)
-        second_half_rows = range(o, n)
-        
-        for first_set in combinations(first_half_rows, k):
-            # Step 3: Choose o-k rows from the second half [o, o+1, ..., n-1]
-            # Make sure not to pick row u+o if we picked u in the first set
-            forbidden_rows = [u + o for u in first_set]
-            valid_second_half_rows = [row for row in second_half_rows if row not in forbidden_rows]
-            
-            for second_set in combinations(valid_second_half_rows, o - k):
-                # Combine the selected rows from the first and second sets
-                selected_rows = list(first_set) + list(second_set)
-                
-                # Step 4: Extract the submatrix
-                submatrix = L[l][selected_rows, :]
-                # (Optional) If you want to check for full rank
-                if submatrix.rank() == o:
-                    L_list.append(submatrix)
-    L_submatrix.append(L_list)
-
-# Check if they are indeed Lagrangian
-all_check_pass = True
-for i in range(m):
-    for j in range(len(L_submatrix[i])):
-        if L_submatrix[i][j]*M[i]*L_submatrix[i][j].transpose() != Matrix(F,o,o) or L_submatrix[i][j].rank() != o:
-            # print(L_submatrix[i][j]*M[i]*L_submatrix[i][j].transpose(), "\n")
-            all_check_pass = False
-print("Are the L all Lagrangians and full rank? : ", all_check_pass)
-
-# Get m*n matrices from o*o matrices
-# This will store the new submatrices
-new_L_submatrix = []
-
-# Iterate over each sublist in L_submatrix
-for sublist in L_submatrix:
-    new_sublist = []
-    
-    # Iterate over each o * n matrix in the sublist
-    for o_matrix in sublist:
-        # Get all combinations of m rows out of o rows
-        row_indices = range(o_matrix.nrows())  # row indices of the o * n matrix
-        
-        # Generate all possible m * n submatrices by selecting m rows from o_matrix
-        for selected_rows in combinations(row_indices, m):
-            # Extract the submatrix with the selected m rows
-            m_submatrix = o_matrix[selected_rows, :]
-            # Append the m * n submatrix to the new sublist
-            new_sublist.append(m_submatrix)
-    
-    # Append the new sublist (containing m * n matrices) to new_L_submatrix
-    new_L_submatrix.append(new_sublist)
-L_submatrix = new_L_submatrix
-# Check if they are indeed isotropic
-all_check_pass = True
-for i in range(m):
-    for j in range(len(L_submatrix[i])):
-        if L_submatrix[i][j]*M[i]*L_submatrix[i][j].transpose() != Matrix(F,m,m) or L_submatrix[i][j].rank() != m:
-            # print(L_submatrix[i][j]*M[i]*L_submatrix[i][j].transpose(), "\n")
-            all_check_pass = False
-print("Are the L all isotropic and full rank m? : ", all_check_pass)
+# Get a full-rank t-dimensional isotropic subspace basis of M[i] 
+L_submatrix = compute_isotropic_subspace_basis(F,L,M,m,n,False) # False if not Lagrangian
 
 # Compute P such that P*M[0]*P^t = M[1]
 Q = diagonalize_full_alternating_matrix(F,M[0]) # Q * M[0] * Q^t = anti-id
 R = diagonalize_full_alternating_matrix(F,M[1]) # R * M[1] * R^t = anti-id
-P = R.inverse()*Q
-print("Check: P*M[0]*P^t == M[1] ", P*M[0]*P.transpose() == M[1])
+P = Q.inverse()*R
+print("Check: P*M[1]*P^t == M[0] ", P*M[1]*P.transpose() == M[0])
 
 # Compute T (m*m) such that T*L_0 = L_1*P with L_i of size m *n and P size n*n
-# Initialize a flag to track if a solution is found
-found_solution = False
+T, L_0_0, L_0_1 = compute_transformation_T(L_submatrix, P)
 
-# Loop over all possible pairs (i, j) where i < j
-for i in tqdm(range(len(L_submatrix[0])),ncols = 100, desc = "Computing T such that T*L_0 = L_1*P ..."):
-    for j in range(len(L_submatrix[0])):  
-        try:
-            # Get the i-th and j-th submatrices from L_submatrix[0]
-            L0_i = L_submatrix[0][i]
-            L0_j = L_submatrix[0][j]
-            
-            # Compute the pseudoinverse of L0_i
-            L0_i_pseudo_inv = L0_i.pseudoinverse()
-
-            # Compute T using L0_j and the pseudoinverse of L0_i
-            T = (L0_j * P) * L0_i_pseudo_inv
-
-            # Check if the transformation T satisfies the condition
-            if T * L0_i != L0_j * P:
-                # If the condition does not hold, continue to the next (i, j)
-                continue
-            
-        except Exception as e:
-            # If any error occurs (e.g., singular matrix), skip to the next pair (i, j)
-            continue  # Go to the next (i, j) pair
-
-        # If the condition holds, output the result
-        print(f"\nCheck T*L[0][{i}] == L[0][{j}]*P: {T * L0_i == L0_j * P}, rank T is full? {T.rank() == o}")
-        
-        # Store the submatrices L_0_0 and L_0_1 as per the condition
-        L_0_0 = L0_i
-        L_0_1 = L0_j
-
-        # Output the results and the matrices
-        print("Condition holds!")
-        print(f"L_0_0 (from index {i})")
-        print(f"L_0_1 (from index {j})")
-
-        # Set the flag to True since a solution was found
-        found_solution = True
-
-        # Break the inner loop (j loop) since we found a valid pair
-        break
-    if found_solution:
-        # Break the outer loop (i loop) as well since we have found a solution
-        break
-
-# If no solution was found after all iterations, print "No solution"
-if not found_solution:
-    print("No solution found !")
-
-print("Check T*L_0_0 == L_0_1*P ?",T*L_0_0 == L_0_1*P)
 # Pick random full rank matrix A and compute B such that T = A.inverse() * B
 while True:
     A = random_matrix(F, m, m)  # You can also use RR or ZZ depending on your field
@@ -283,4 +162,3 @@ else:
 # Check UOV vanish
 # print(Oil_subspace)
 print(check_uov_vanishing(F,Oil_subspace,[M[0],M[1]]))
-"""

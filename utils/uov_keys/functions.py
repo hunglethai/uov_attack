@@ -76,6 +76,7 @@ def upper(F: FiniteField, M: Matrix) -> Matrix:
     # Return the matrix X
     return X
 
+# Check if a matrix is indeed skew-symmetric
 def is_skew_symmetric(F,M: Matrix) -> bool:
     # Get the number of rows (and columns, assuming it's square)
     n = M.nrows()
@@ -87,7 +88,7 @@ def is_skew_symmetric(F,M: Matrix) -> bool:
                 return False
     return True
 
-# Generate a matrix that vanishes on the oil space
+# Generate a matrix that vanishes on the oil space i.e. public key matrices
 def generate_public_matrices(F: FiniteField, m: int, n: int, O: Matrix) -> list:
     """
     F: Finite Field
@@ -110,7 +111,7 @@ def generate_public_matrices(F: FiniteField, m: int, n: int, O: Matrix) -> list:
     
     return list_P
 
-# Generate a list of matrices where each matrix is the sum of the corresponding matrix in the input list and its transpose
+# Generate a list of matrices where each matrix is the sum of the corresponding matrix in the input list and its transpose i.e M = P + P^t i.e symplectic forms UOV
 def generate_list_M(list_P):
     """
     Generate a list of matrices where each matrix is the sum of the corresponding 
@@ -167,7 +168,7 @@ def is_invariant_subspace(F, X, T):
     # If all transformed vectors lie in A, the subspace is invariant under T
     return True
 
-# Create a function that checks if a subspace L vanishes in a list of matrices M[i].
+# Create a function that checks if a subspace L vanishes in a list of matrices M[i] i.e. UOV public keys
 def check_uov_vanishing(F: FiniteField, L , M_list: list) -> bool:
     """
     Check if for all row vectors x, y in subspace L and for all matrices M in M_list,
@@ -200,7 +201,7 @@ def check_uov_vanishing(F: FiniteField, L , M_list: list) -> bool:
                     return False
     return True
 
-# Visualize matrices over finite fields by creating a plot where non-zero elements are represented by black dots and zero elements by white dots
+# Visualize matrices where non-zero elements are represented by black dots and zero elements by white dots
 def color_matrix(matrix: Matrix):
     """
     Function to print a large matrix in a compact way, using:
@@ -221,6 +222,155 @@ def color_matrix(matrix: Matrix):
             else:
                 row_str += "■ "  # Filled square for non-zero
         print(row_str.strip())  # Print each row of squares
+
+# Construct the isotropic subspace basis from a symplectic basis noted that if m = n//2 it is a Lagrangian        
+def compute_isotropic_subspace_basis(F: FiniteField, L: list, M: list, m: int, n: int, lag_or_not: bool, o: int = None):
+    """
+    This function computes o-dimensional isotropic subspace basis form a symplectic basis.
+
+    Args:
+        L (list): A list of matrices which are the symplectic basis, from which submatrices will be extracted.
+        M (list): A list of matrices that are symplectic forms.
+        n (int): Dimension of the Finite Field i.e. n = 2o
+        m (int): Number of rows in the isotropic subspace basis i.e. the isotropic subspace is m-dimensional. If m = n//2 we are dealing with lagrangians.
+        F: A finite field or identity matrix to check against.
+        lag_or_not: We are computing o-dimensional isotropic subspace basis or not ? i.e we are computing Lagrangians or not ?
+            If True, the function will automatically set o = n // 2.
+            If False, it will ask the user to input the value for o.
+        o (int, optional): The number of rows to select. Will be automatically set if lag_or_not is True.
+
+    Returns:
+        L_submatrix (list): A list containing all o-dimensional isotropic subspace basis that are full-rank of m symplectic from of dimension n.
+        all_check_pass (bool): Boolean flag indicating if all submatrices pass the Lagrangian check.
+    """
+    # Set o based on lag_or_not flag
+    if lag_or_not:
+        o = n // 2
+        print(f"We are computing Lagrangian basis, setting o to {o} (n // 2)")
+    elif o is None:  # If lag_or_not is False and no value for o is provided
+        o = int(input("We are computing isotropic basis of dimension o, please enter the value of o: "))
+
+    # Initialize a list to store all submatrices of size o x n that meet the criteria
+    L_submatrix = []
+    
+    # Iterate over all possible matrices in L
+    for l in tqdm(range(m), ncols=100, desc=f"Computing all {o}-dimensional isotropic subspaces of each of {m} symplectic basis ... "):
+        L_list = []
         
+        # Loop over possible k values
+        for k in range(o + 1):
+            first_half_rows = range(n//2)
+            second_half_rows = range(n//2, n)
+            
+            # Choose k rows from the first half
+            for first_set in combinations(first_half_rows, k):
+                # Exclude the corresponding second half rows
+                forbidden_rows = [u + n//2 for u in first_set]
+                valid_second_half_rows = [row for row in second_half_rows if row not in forbidden_rows]
+                
+                # Choose o - k rows from the second half
+                for second_set in combinations(valid_second_half_rows, o - k):
+                    # Combine selected rows
+                    selected_rows = list(first_set) + list(second_set)
+                    
+                    # Extract submatrix
+                    submatrix = L[l][selected_rows, :]
+                    
+                    # Check for full rank using Sage's rank function
+                    if submatrix.rank() == o:
+                        L_list.append(submatrix)
+        
+        L_submatrix.append(L_list)
     
+    # Check if the submatrices are isotropic and full rank
+    all_check_pass = True
+    for i in range(m):
+        for j in range(len(L_submatrix[i])):
+            if (L_submatrix[i][j] * M[i] * L_submatrix[i][j].transpose()).is_zero() == False or (L_submatrix[i][j].rank() != L_submatrix[i][j].nrows()):
+                all_check_pass = False
+                break  # Exit loop if any check fails
     
+    # Only return and print results if all checks pass
+    if all_check_pass:
+        print(f"All submatrices are {o}-dimensional isotropic subspace basis and full rank.")
+        return L_submatrix
+    else:
+        print("Some submatrices failed the check. No output returned.")
+        return None
+
+# Computes the matrix T such that T * L_0 = L_1 * P for two submatrices L_0 and L_1 are m-dimsional isotropic subspace basis of M
+def compute_transformation_T(L_submatrix: list, P: Matrix):
+    """
+    Computes the matrix T such that T * L_0 = L_1 * P for two submatrices L_0 and L_1 of size m * n, 
+    where P is of size n * n. The function will find the pair (L_0, L_1) that satisfies the condition
+    and return T and the submatrices if a solution is found.
+
+    Args:
+        L_submatrix (list): A list of submatrices from which L_0 and L_1 are extracted.
+        P: The matrix P of size n * n used in the transformation.
+
+    Returns:
+        T (matrix or None): The transformation matrix T if a valid one is found, otherwise None.
+        L_0_0 (matrix or None): The submatrix L_0_0 if a solution is found, otherwise None.
+        L_0_1 (matrix or None): The submatrix L_0_1 if a solution is found, otherwise None.
+        found_solution (bool): Flag indicating if a solution was found.
+    """
+    
+    # Initialize a flag to track if a solution is found
+    found_solution = False
+    T = None
+    L_0_0 = None
+    L_0_1 = None
+
+    # Loop over all possible pairs (i, j)
+    for i in tqdm(range(len(L_submatrix[0])), ncols=100, desc="Computing T such that T*L_0 = L_1*P ..."):
+        for j in range(len(L_submatrix[0])):
+            try:
+                # Get the i-th and j-th submatrices from L_submatrix[0]
+                L0_i = L_submatrix[0][i]
+                L0_j = L_submatrix[0][j]
+                
+                # Compute the pseudoinverse of L0_i
+                L0_i_pseudo_inv = L0_i.pseudoinverse()
+
+                # Compute T using L0_j and the pseudoinverse of L0_i
+                T = (L0_j * P) * L0_i_pseudo_inv
+
+                # Check if the transformation T satisfies the condition
+                if T * L0_i != L0_j * P:
+                    # If the condition does not hold, continue to the next (i, j)
+                    continue
+                
+            except Exception as e:
+                # If any error occurs (e.g., singular matrix), skip to the next pair (i, j)
+                continue  # Go to the next (i, j) pair
+
+            # If the condition holds, output the result
+            print(f"\nCheck T*L[0][{i}] == L[0][{j}]*P: {T * L0_i == L0_j * P}, rank T is full? {T.rank() == T.nrows()}")
+            
+            # Store the submatrices L_0_0 and L_0_1 as per the condition
+            L_0_0 = L0_i
+            L_0_1 = L0_j
+
+            # Output the results and the matrices
+            print("Condition holds!")
+            print(f"L_0_0 (from index {i})")
+            print(f"L_0_1 (from index {j})")
+
+            # Set the flag to True since a solution was found
+            found_solution = True
+
+            # Break the inner loop (j loop) since we found a valid pair
+            break
+        if found_solution:
+            # Break the outer loop (i loop) as well since we have found a solution
+            break
+
+    # If no solution was found after all iterations, print "No solution"
+    if not found_solution:
+        print("No solution found !")
+    else:
+        print(f"Check T*L_0_0 == L_0_1*P ? {T * L_0_0 == L_0_1 * P}")
+
+    # Return the results
+    return T, L_0_0, L_0_1
