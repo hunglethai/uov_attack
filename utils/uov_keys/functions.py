@@ -327,14 +327,16 @@ def compute_transformation_T(L_submatrix: list, P: Matrix):
         for j in range(len(L_submatrix[0])):
             try:
                 # Get the i-th and j-th submatrices from L_submatrix[0]
+                m,n = L_submatrix[0][0].nrows(),L_submatrix[0][0].ncols()
                 L0_i = L_submatrix[0][i]
                 L0_j = L_submatrix[0][j]
-                
-                # Compute the pseudoinverse of L0_i
-                L0_i_pseudo_inv = L0_i.pseudoinverse()
+                L0_j_P = L0_j*P
+                # Compute the last m columns of L0_i and L0_j_P
+                L0_i_tail = L0_i[:, -m:]
+                L0_j_P_tail = L0_j_P[:, -m:]
 
-                # Compute T using L0_j and the pseudoinverse of L0_i
-                T = (L0_j * P) * L0_i_pseudo_inv
+                # Compute T = L0_j_P_tail * L0_i_tail.inverse() 
+                T = L0_j_P_tail * L0_i_tail.inverse() 
 
                 # Check if the transformation T satisfies the condition
                 if T * L0_i != L0_j * P:
@@ -343,6 +345,7 @@ def compute_transformation_T(L_submatrix: list, P: Matrix):
                 
             except Exception as e:
                 # If any error occurs (e.g., singular matrix), skip to the next pair (i, j)
+                # print(e)
                 continue  # Go to the next (i, j) pair
 
             # If the condition holds, output the result
