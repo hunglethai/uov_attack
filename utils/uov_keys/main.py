@@ -34,7 +34,7 @@ def regenerate_until_full_rank(F, m, n, O):
 
 # Parameters
 m = 4  # i.e oil
-n = 14 # i.e. vinegar + oil
+n = 10 # i.e. vinegar + oil
 F = GF(4, 'x')
 
 # Generate Oil subspace matrices Vertical O_I = [O] i.e. O_I^t * M * O_I = 0

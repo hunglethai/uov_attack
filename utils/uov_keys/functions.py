@@ -221,7 +221,7 @@ def color_matrix(matrix: Matrix):
                 row_str += "□ "  # Empty square for zero
             else:
                 row_str += "■ "  # Filled square for non-zero
-        print(row_str.strip())  # Print each row of squares
+    print(row_str.strip())  # Print each row of squares
 
 # Construct the isotropic subspace basis from a symplectic basis noted that if m = n//2 it is a Lagrangian        
 def compute_isotropic_subspace_basis(F: FiniteField, L: list, M: list, m: int, n: int, lag_or_not: bool, o: int = None):
