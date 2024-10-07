@@ -240,7 +240,7 @@ def compute_isotropic_subspace_basis(F: FiniteField, L: list, M: list, m: int, n
         o (int, optional): The number of rows to select. Will be automatically set if lag_or_not is True.
 
     Returns:
-        L_submatrix (list): A list containing all o-dimensional isotropic subspace basis that are full-rank of m symplectic from of dimension n.
+        matrices_list: A list containing all o-dimensional isotropic subspace basis that are full-rank of m symplectic from of dimension n.
         all_check_pass (bool): Boolean flag indicating if all submatrices pass the Lagrangian check.
     """
     # Set o based on lag_or_not flag
@@ -299,14 +299,14 @@ def compute_isotropic_subspace_basis(F: FiniteField, L: list, M: list, m: int, n
         return None
 
 # Computes the matrix T such that T * L_0 = L_1 * P for two submatrices L_0 and L_1 are m-dimsional isotropic subspace basis of M
-def compute_transformation_T(L_submatrix: list, P: Matrix):
+def compute_transformation_T(matrices_list: list, P: Matrix):
     """
     Computes the matrix T such that T * L_0 = L_1 * P for two submatrices L_0 and L_1 of size m * n, 
     where P is of size n * n. The function will find the pair (L_0, L_1) that satisfies the condition
     and return T and the submatrices if a solution is found.
 
     Args:
-        L_submatrix (list): A list of submatrices from which L_0 and L_1 are extracted.
+        matrices_list: A list of submatrices from which L_0 and L_1 are extracted.
         P: The matrix P of size n * n used in the transformation.
 
     Returns:
@@ -323,17 +323,21 @@ def compute_transformation_T(L_submatrix: list, P: Matrix):
     L_0_1 = None
 
     # Loop over all possible pairs (i, j)
-    for i in tqdm(range(len(L_submatrix[0])), ncols=100, desc="Computing T such that T*L_0 = L_1*P ..."):
-        for j in range(len(L_submatrix[0])):
+    for i in tqdm(range(len(matrices_list)), ncols=100, desc="Computing T such that T*L_0 = L_1*P ..."):
+        for j in range(len(matrices_list)):
             try:
-                # Get the i-th and j-th submatrices from L_submatrix[0]
-                m,n = L_submatrix[0][0].nrows(),L_submatrix[0][0].ncols()
-                L0_i = L_submatrix[0][i]
-                L0_j = L_submatrix[0][j]
+                # Get the i-th and j-th submatrices from matrices_list
+                m,n = matrices_list[0].nrows(),matrices_list[0].ncols()
+                L0_i = matrices_list[i]
+                # print(L0_i,"\n")
+                L0_j = matrices_list[j]
+                # print(L0_j,"\n")
                 L0_j_P = L0_j*P
                 # Compute the last m columns of L0_i and L0_j_P
                 L0_i_tail = L0_i[:, -m:]
+                # print(L0_i_tail,"\n")
                 L0_j_P_tail = L0_j_P[:, -m:]
+                # print(L0_j_P_tail,"\n")
 
                 # Compute T = L0_j_P_tail * L0_i_tail.inverse() 
                 T = L0_j_P_tail * L0_i_tail.inverse() 

@@ -33,8 +33,8 @@ def regenerate_until_full_rank(F, m, n, O):
             return list_M
 
 # Parameters
-m = 4  # i.e oil
-n = 10 # i.e. vinegar + oil
+m = 2  # i.e oil
+n = 8 # i.e. vinegar + oil
 F = GF(4, 'x')
 
 # Generate Oil subspace matrices Vertical O_I = [O] i.e. O_I^t * M * O_I = 0
@@ -57,11 +57,15 @@ L_submatrix = compute_isotropic_subspace_basis(F,L,M,m,n,False) # False if not L
 Q = diagonalize_full_alternating_matrix(F,M[0]) # Q * M[0] * Q^t = anti-id
 R = diagonalize_full_alternating_matrix(F,M[1]) # R * M[1] * R^t = anti-id
 P = Q.inverse()*R
-print("Check: P*M[1]*P^t == M[0] ", P*M[1]*P.transpose() == M[0])
+print("Check: P*M[1]*P^t== M[0] ", P*M[1]*P.transpose() == M[0])
 
+
+print(type(L_submatrix[0]), "\n")
+test_list = L_submatrix[0]
+print(test_list)
 # Compute T (m*m) such that T*L_0 = L_1*P with L_i of size m *n and P size n*n
-T, L_0_0, L_0_1 = compute_transformation_T(L_submatrix, P)
-
+T, L_0_0, L_0_1 = compute_transformation_T(test_list, P)
+"""
 # Pick random full rank matrix A and compute B such that T = A.inverse() * B
 while True:
     A = random_matrix(F, m, m)  # You can also use RR or ZZ depending on your field
@@ -162,3 +166,4 @@ else:
 # Check UOV vanish
 # print(Oil_subspace)
 print(check_uov_vanishing(F,Oil_subspace,[M[0],M[1]]))
+"""
