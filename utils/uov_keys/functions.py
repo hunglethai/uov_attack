@@ -298,7 +298,7 @@ def compute_isotropic_subspace_basis(F: FiniteField, L: list, M: list, m: int, n
         print("Some submatrices failed the check. No output returned.")
         return None
 
-# Computes the matrix T such that T * L_0 = L_1 * P for two submatrices L_0 and L_1 are m-dimsional isotropic subspace basis of M
+# Computes the matrix T such that T * L_0 = L_1 * P for two submatrices L_0 and L_1 are in matrices_list
 def compute_transformation_T(matrices_list: list, P: Matrix):
     """
     Computes the matrix T such that T * L_0 = L_1 * P for two submatrices L_0 and L_1 of size m * n, 
@@ -321,23 +321,21 @@ def compute_transformation_T(matrices_list: list, P: Matrix):
     T = None
     L_0_0 = None
     L_0_1 = None
+    m = matrices_list[0].nrows()
+    n = matrices_list[0].ncols()
 
     # Loop over all possible pairs (i, j)
     for i in tqdm(range(len(matrices_list)), ncols=100, desc="Computing T such that T*L_0 = L_1*P ..."):
         for j in range(len(matrices_list)):
             try:
                 # Get the i-th and j-th submatrices from matrices_list
-                m,n = matrices_list[0].nrows(),matrices_list[0].ncols()
                 L0_i = matrices_list[i]
-                # print(L0_i,"\n")
                 L0_j = matrices_list[j]
-                # print(L0_j,"\n")
                 L0_j_P = L0_j*P
+
                 # Compute the last m columns of L0_i and L0_j_P
                 L0_i_tail = L0_i[:, -m:]
-                # print(L0_i_tail,"\n")
                 L0_j_P_tail = L0_j_P[:, -m:]
-                # print(L0_j_P_tail,"\n")
 
                 # Compute T = L0_j_P_tail * L0_i_tail.inverse() 
                 T = L0_j_P_tail * L0_i_tail.inverse() 
@@ -361,8 +359,8 @@ def compute_transformation_T(matrices_list: list, P: Matrix):
 
             # Output the results and the matrices
             print("Condition holds!")
-            print(f"L_0_0 (from index {i})")
-            print(f"L_0_1 (from index {j})")
+            print(f"L_0_0 (from index {i})", L_0_0, "\n")
+            print(f"L_0_1 (from index {j})", L_0_1, "\n")
 
             # Set the flag to True since a solution was found
             found_solution = True
