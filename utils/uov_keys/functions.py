@@ -141,7 +141,7 @@ def generate_list_M(list_P):
     return list_M
 
 # Check if a subspace A (having basis X) is invariant under the linear transformation T
-def is_invariant_subspace(F, X, T):
+def is_invariant_subspace(F: FiniteField, X: Matrix, T: Matrix) -> bool:
     """
     Check if the subspace A spanned by X is invariant under the linear transformation T.
     
@@ -379,3 +379,47 @@ def compute_transformation_T(matrices_list: list, P: Matrix):
 
     # Return the results
     return T, L_0_0, L_0_1
+
+# Compute a non-trivial invariant subspace of a linear transformation P: F_q^n -> F_q^n
+def compute_invariant_subspace(F: FiniteField, P: Matrix) -> list:
+    """
+    Computes a non-trivial invariant subspace of a linear transformation P: F -> F
+
+    Args:
+        F: Finite field.
+        P: The matrix P of size n * n used in the transformation.
+
+    Returns:
+        list of basis vectors of the invariant subspace
+    """
+    # Step 1: Compute the characteristic polynomial of P
+    char_poly = P.charpoly()
+    print(char_poly)
+    # Step 2: Factor the characteristic polynomial to find potential eigenvalues
+    factors = char_poly.factor()
+    
+    # Step 3: For each factor, solve for the null space of (P - λI)
+    for factor in factors:
+        poly_P = factor[0](P)
+        # Define a symbolic variable lambda
+        var('lambda')
+        
+        # Compute the characteristic matrix (lambda * I - P)
+        I = identity_matrix(F, poly.nrows())  # Identity matrix
+        char_matrix = lambda * I - poly_P
+        
+        # Compute the determinant of (lambda * I - P)
+        char_poly = char_matrix.det()
+
+        # Solve the characteristic equation: det(lambda * I - P) = 0
+        eigenvalues = solve(char_poly == 0, lambda)
+        for eigenvalue in eigenvalues:
+            # Construct the matrix (P - λI)
+            matrix_shifted = poly - eigenvalue * I
+            # Compute the null space (kernel) of this matrix
+            null_space = matrix_shifted.right_kernel()
+            
+            # Step 4: Return a non-trivial subspace (i.e., non-zero eigenspace)
+            if null_space.dimension() > 0:
+                return null_space.basis()  # Return the basis vectors for the invariant subspace
+        return []  # Return an empty list if no non-trivial subspace is found
